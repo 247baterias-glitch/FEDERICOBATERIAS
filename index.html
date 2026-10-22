@@ -8,7 +8,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>Stock Baterias</title>
+<title>ENVÍOS DE BATERÍAS</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 :root{
@@ -676,7 +676,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <body>
 <div id="login" style="display:none;position:fixed;inset:0;background:#0a0a23;align-items:center;justify-content:center;z-index:9999;padding:20px">
   <div style="background:#fff;padding:28px;border-radius:14px;width:100%;max-width:300px;text-align:center;font-family:'Plus Jakarta Sans',sans-serif">
-    <h2 style="margin:0 0 16px;color:#111;font-size:20px">🔒 Stock Baterias</h2>
+    <h2 style="margin:0 0 16px;color:#111;font-size:20px">🔒 ENVÍOS DE BATERÍAS</h2>
     <input id="claveInput" type="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')entrar()" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;box-sizing:border-box;color:#111;background:#fff">
     <button onclick="entrar()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:8px;background:#111;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Entrar</button>
     <p id="loginError" style="color:#dc2626;font-size:14px;margin:10px 0 0"></p>
@@ -684,7 +684,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div class="header">
 <div class="logo"><img src="https://i.imgur.com/K9kZ7Te.png" style="width:36px;height:36px;border-radius:8px;object-fit:contain;background:#fff"/></div>
-<div><div class="h1" id="titulo">Stock Baterias</div><div class="h2" id="sync">Cargando...</div></div>
+<div><div class="h1" id="titulo">ENVÍOS DE BATERÍAS</div><div class="h2" id="sync">Cargando...</div></div>
 </div>
 <div class="section">
 <div id="p0" class="hidden">
@@ -1228,7 +1228,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="dzOverlay"><div id="dzTxt">Soltá el archivo para subirlo</div></div>
 <script>
 // >>> PEGAR ACÁ la URL de la implementación del Apps Script del colega (termina en /exec) <<<
-var API_URL='PEGAR_URL_DEL_APPS_SCRIPT';
+var API_URL='https://script.google.com/macros/s/AKfycbxtNzELVLEFt3RQHsczZuGM7tPidouJuHvKtO4oTZtmRDEQFrrjKciG_efTbqLffI51/exec';
 // ================== VELOCIDAD: caché de lecturas ==================
 // Las lecturas (getX / xGet) se guardan en memoria y en el navegador. Al entrar a una sección se muestra
 // al instante lo último que se vio y por atrás se piden los datos nuevos; si cambiaron, se actualiza la pantalla.
@@ -2376,7 +2376,7 @@ function navAbrirHash(){
 }
 function volverInicio(){
   ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
-  document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
+  document.getElementById('p0').classList.remove('hidden');titulo('ENVÍOS DE BATERÍAS');
   tipoExtra='';camExtra=null;
 }
 function mostrarTipoServicio(){
@@ -2838,7 +2838,7 @@ function errLoad(msg){document.getElementById('p0load').innerHTML='<div class="e
 function guardar(id,campo,val){sync('Guardando...');api('actualizarStock',{id:id,campo:campo,valor:val}).then(function(){sync('Sincronizado');});}
 function nombreCam(c){return c.dep?'Depósito':'Stock '+c.n;}
 function rCams(){
-  titulo('Stock Baterias');
+  titulo('ENVÍOS DE BATERÍAS');
   var totalGen=0;CAMS.forEach(function(c){totalGen+=datos.reduce(function(s,m){return s+(m[c.c]||0);},0);});
   var h='<div class="stk-total"><span>Total de baterías</span><b>'+totalGen+'</b></div><div class="grid">';
   CAMS.forEach(function(c){
