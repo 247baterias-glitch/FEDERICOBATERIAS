@@ -135,6 +135,8 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-card .acts button{font-size:16px;padding:14px 10px}
 .stk-danada{margin-top:8px;width:100%;background:transparent;border:1px dashed rgba(248,113,113,.4);color:#f87171;border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .stk-danada:disabled{opacity:.35;cursor:default}
+body.modo-tec .solo-duenos,body.modo-tec a.card[href="#precios"],body.modo-tec a.card[href="#resumen"],body.modo-tec a.card[href="#listas"],body.modo-tec a.card[href="#iva"],body.modo-tec a.card[href="#compras"]{display:none!important}
+.tec-tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:800;color:var(--teal);border:1px solid rgba(45,212,191,.45);border-radius:999px;padding:1px 8px;vertical-align:middle}
 .cg-card{padding:1.2rem 1.3rem}
 .cg-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .cg-ic{font-size:26px}
@@ -699,7 +701,7 @@ function pedirClave(error){
 function entrar(){
   var v=document.getElementById('claveInput').value.trim();
   if(!v)return;
-  LS.setItem('clave',v);
+  LS.setItem('clave',v);LS.removeItem('rol');
   location.reload();
 }
 if(!LS.getItem('clave'))pedirClave(false);
@@ -1089,7 +1091,7 @@ if(!LS.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="colVigencia" value="12 meses"/></div>
 <div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="colTelefonoCliente" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
-<div class="gfield"><label>Costo de la batería <span style="font-weight:500;color:var(--muted)">(lo que pagaron por ella)</span></label><input type="text" id="colCosto" inputmode="numeric" placeholder="Ej: $95.000"/></div>
+<div class="gfield solo-duenos"><label>Costo de la batería <span style="font-weight:500;color:var(--muted)">(lo que pagaron por ella)</span></label><input type="text" id="colCosto" inputmode="numeric" placeholder="Ej: $95.000"/></div>
 <div class="gfield wide"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="colPagoBtns">
 <button type="button" class="bs" onclick="setColPago('Efectivo',this)" style="flex:1">Efectivo</button>
@@ -1224,7 +1226,7 @@ if(!LS.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="editVigencia"/></div>
 <div class="gfield"><label>Telefono cliente (opcional)</label><input type="text" id="editTelefonoCliente"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="editPrecio"/></div>
-<div class="gfield"><label>Costo de la batería</label><input type="text" id="editCosto" inputmode="numeric"/></div>
+<div class="gfield solo-duenos"><label>Costo de la batería</label><input type="text" id="editCosto" inputmode="numeric"/></div>
 <div class="gfield"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="editPagoBtns">
 <button type="button" class="bs" onclick="setEditPago('Efectivo',this)" style="flex:1">Efectivo</button>
@@ -1537,6 +1539,7 @@ function apiRaw(action,params){
     var cbName='cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
     window[cbName]=function(data){
       if(data&&data.error==='no autorizado'){pedirClave(true);}
+      else if(data&&data.rol!==undefined)rolSet(data.rol);
       resolve(data);
       delete window[cbName];
       if(scriptEl.parentNode)scriptEl.parentNode.removeChild(scriptEl);
@@ -2385,7 +2388,7 @@ function mostrarBuscador(){
   document.getElementById('resV').innerHTML='<div class="no-res">Cargando...</div>';
   apiPost('buscadorGet').then(function(r){
     if(r.ok){BUSCADOR=(r.data||[]).map(function(x){return [x.v,x.b,x.fila];});}
-    else toast('Error: '+r.error);
+    else return api('getBuscador').then(function(r2){if(r2&&r2.ok)BUSCADOR=r2.data;buscarVehiculo();});
     buscarVehiculo();
   }).catch(function(){
     api('getBuscador').then(function(r){
@@ -6202,6 +6205,18 @@ function lkPedir(fn){
   inp.focus();
 }
 Object.keys(LK_ORIG).forEach(function(fn){window[fn]=function(){if(lkAbierto())return LK_ORIG[fn].apply(this,arguments);lkPedir(fn);};});
+// Modo técnico (entró con CLAVE_TECNICO): no ve costos, precios de lista, resumen ni secciones de dueños
+function esTecnico(){return LS.getItem('rol')==='tecnico';}
+function rolSet(r){var antes=LS.getItem('rol')||'';r=r||'';if(r===antes&&rolSet.ok)return;rolSet.ok=true;if(r)LS.setItem('rol',r);else LS.removeItem('rol');rolAplicar();}
+function rolAplicar(){
+  var t=esTecnico();document.body.classList.toggle('modo-tec',t);
+  var h=document.getElementById('titulo');if(h){var g=document.getElementById('tecTag');if(t&&!g){g=document.createElement('span');g.id='tecTag';g.className='tec-tag';g.textContent='Técnico';h.parentNode.insertBefore(g,h.nextSibling);}if(!t&&g)g.remove();}
+  if(t&&(visible('p4')||visible('p7')||visible('p10')||visible('p12')||visible('p13')))volverInicio();
+}
+['mostrarPrecios','mostrarResumen','mostrarListasDist','mostrarIva','mostrarPedidos'].forEach(function(fn){
+  var orig=window[fn];window[fn]=function(){if(esTecnico()){toast('Esta sección es solo para los dueños');return;}return orig.apply(this,arguments);};
+});
+rolAplicar();
 // Sin sección de motos
 window.mostrarMoto=function(){};
 </script>
