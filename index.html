@@ -653,8 +653,14 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 .lk-btns{display:flex;gap:8px;margin-top:10px}.lk-btns button{flex:1}
 </style>
 <script>
+// Datos guardados en el navegador separados de la app de Mateo (mismo dominio github.io)
+var LS=(function(){var P='fed:',S=window.localStorage;return{
+getItem:function(k){return S.getItem(P+k);},setItem:function(k,v){S.setItem(P+k,v);},removeItem:function(k){S.removeItem(P+k);},
+keys:function(){return Object.keys(S).filter(function(k){return k.indexOf(P)===0;}).map(function(k){return k.slice(P.length);});}};})();
+</script>
+<script>
 function pedirClave(error){
-  if(error)localStorage.removeItem('clave');
+  if(error)LS.removeItem('clave');
   var mostrar=function(){
     var l=document.getElementById('login');
     if(!l)return;
@@ -667,10 +673,10 @@ function pedirClave(error){
 function entrar(){
   var v=document.getElementById('claveInput').value.trim();
   if(!v)return;
-  localStorage.setItem('clave',v);
+  LS.setItem('clave',v);
   location.reload();
 }
-if(!localStorage.getItem('clave'))pedirClave(false);
+if(!LS.getItem('clave'))pedirClave(false);
 </script>
 </head>
 <body>
@@ -1239,22 +1245,22 @@ function cacheEsLectura(action,post){return post?(/Get$/.test(action)||action===
 function cacheKey(action,params,post){var p=params||{},o={};Object.keys(p).sort().forEach(function(k){if(k!=='action'&&k!=='clave')o[k]=p[k];});return 'c:'+(post?'P:':'G:')+action+':'+JSON.stringify(o);}
 function cacheLeer(k){
   var e=CACHE_MEM[k];
-  if(!e){try{var t=localStorage.getItem(k);if(t){e=JSON.parse(t);CACHE_MEM[k]=e;}}catch(x){}}
+  if(!e){try{var t=LS.getItem(k);if(t){e=JSON.parse(t);CACHE_MEM[k]=e;}}catch(x){}}
   if(e&&Date.now()-e.t>CACHE_MAX_MS)return null;
   return e||null;
 }
 function cacheGuardar(k,data){
   var e={t:Date.now(),d:data};CACHE_MEM[k]=e;
-  try{localStorage.setItem(k,JSON.stringify(e));}catch(x){
-    try{Object.keys(localStorage).forEach(function(kk){if(kk.indexOf('c:')===0&&kk!==k&&kk.indexOf('getDatos')===-1)localStorage.removeItem(kk);});localStorage.setItem(k,JSON.stringify(e));}catch(y){}
+  try{LS.setItem(k,JSON.stringify(e));}catch(x){
+    try{LS.keys().forEach(function(kk){if(kk.indexOf('c:')===0&&kk!==k&&kk.indexOf('getDatos')===-1)LS.removeItem(kk);});LS.setItem(k,JSON.stringify(e));}catch(y){}
   }
 }
 function cacheLimpiar(){
   CACHE_MEM={};
-  try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('c:')===0&&k.indexOf('getDatos')===-1)localStorage.removeItem(k);});}catch(x){}
+  try{LS.keys().forEach(function(k){if(k.indexOf('c:')===0&&k.indexOf('getDatos')===-1)LS.removeItem(k);});}catch(x){}
   // getDatos se conserva para arrancar rápido, pero se marca como viejo para que se vuelva a pedir
   var viejo=Date.now()-CACHE_FRESCO_MS-1;
-  try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('getDatos')!==-1){var e=JSON.parse(localStorage.getItem(k));e.t=Math.min(e.t,viejo);localStorage.setItem(k,JSON.stringify(e));}});}catch(x){}
+  try{LS.keys().forEach(function(k){if(k.indexOf('getDatos')!==-1){var e=JSON.parse(LS.getItem(k));e.t=Math.min(e.t,viejo);LS.setItem(k,JSON.stringify(e));}});}catch(x){}
 }
 function cachePedir(k,action,params,post){
   if(CACHE_PEND[k])return CACHE_PEND[k];
@@ -1316,13 +1322,13 @@ function cfgModificar(mutar,verificar){
 // Cada cambio queda anotado en este navegador con la hora. Si la configuración de Google vuelve a una versión
 // vieja (pasaba: guardabas uno y desaparecían los anteriores), la app lo detecta y vuelve a subir lo que falta.
 // Los sellos de hora en Google (campoT) hacen que gane el cambio más nuevo, aunque venga de otro celular.
-function ledgerTodo(){try{return JSON.parse(localStorage.getItem('nomLedger')||'{}')||{};}catch(e){return {};}}
+function ledgerTodo(){try{return JSON.parse(LS.getItem('nomLedger')||'{}')||{};}catch(e){return {};}}
 function ledgerAnotar(campo,k,v){
   var L=ledgerTodo();L[campo]=L[campo]||{};L[campo][k]={v:v,t:Date.now()};
   var lim=Date.now()-90*24*3600*1000;Object.keys(L).forEach(function(c){Object.keys(L[c]).forEach(function(kk){if(L[c][kk].t<lim)delete L[c][kk];});});
-  try{localStorage.setItem('nomLedger',JSON.stringify(L));}catch(e){}
+  try{LS.setItem('nomLedger',JSON.stringify(L));}catch(e){}
 }
-function ledgerQuitar(campo,k){var L=ledgerTodo();if(L[campo]){delete L[campo][k];try{localStorage.setItem('nomLedger',JSON.stringify(L));}catch(e){}}}
+function ledgerQuitar(campo,k){var L=ledgerTodo();if(L[campo]){delete L[campo][k];try{LS.setItem('nomLedger',JSON.stringify(L));}catch(e){}}}
 function cfgObj(cfg,clave){var v=cfg?cfg[clave]:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
 // Aplica al mapa plano obj (y sus sellos ts) lo anotado en este navegador que sea más nuevo. Devuelve true si cambió algo.
 function ledgerAplicar(campo,obj,ts){
@@ -1507,7 +1513,7 @@ function apiRaw(action,params){
       delete window[cbName];
       if(scriptEl.parentNode)scriptEl.parentNode.removeChild(scriptEl);
     };
-    var url=API_URL+'?action='+action+'&callback='+cbName+'&clave='+encodeURIComponent(localStorage.getItem('clave')||'');
+    var url=API_URL+'?action='+action+'&callback='+cbName+'&clave='+encodeURIComponent(LS.getItem('clave')||'');
     Object.keys(params).forEach(function(k){url+='&'+k+'='+encodeURIComponent(params[k]==null?'':params[k]);});
     var scriptEl=document.createElement('script');
     scriptEl.src=url;
@@ -4084,7 +4090,7 @@ var lpActual=0,lpData={archivos:[],items:[]},lpMargen=55000,lpModo='agregar',lpO
 function apiPostRaw(action,payload){
   payload=payload||{};
   payload.action=action;
-  payload.clave=localStorage.getItem('clave')||'';
+  payload.clave=LS.getItem('clave')||'';
   return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){
     if(!r.ok)throw new Error('Error de red ('+r.status+')');
     return r.json();
@@ -4099,12 +4105,12 @@ function lpNum(v){
 }
 // ---- Carrito de compra ----
 var lpCarrito=[];
-try{lpCarrito=JSON.parse(localStorage.getItem('lpCarrito')||'[]')||[];}catch(e){lpCarrito=[];}
+try{lpCarrito=JSON.parse(LS.getItem('lpCarrito')||'[]')||[];}catch(e){lpCarrito=[];}
 var LP_SCRAP_VALOR=10500;
 // Compra facturada (en blanco): IVA 21% + percepción IIBB CABA 5%, ambos sobre el neto
 var LP_IVA=0.21,LP_IIBB=0.05,LP_FAC=1+LP_IVA+LP_IIBB;
 var lpSaldo=0,lpSaldoEditando=false;
-try{lpSaldo=Number(localStorage.getItem('lpSaldo'))||0;}catch(e){}
+try{lpSaldo=Number(LS.getItem('lpSaldo'))||0;}catch(e){}
 function lpSaldoHtml(){
   if(lpSaldoEditando){
     return '<div class="lp-saldo"><div class="lp-saldo-txt">&#128176; Saldo disponible</div><span style="font-weight:800">$</span><input type="text" inputmode="numeric" id="lpSaldoInput" value="'+(lpSaldo?formatMoney(lpSaldo):'')+'" placeholder="0" onkeydown="if(event.key===\'Enter\')lpSaldoGuardar()"/><button class="bp lp-mini" style="flex:0" onclick="lpSaldoGuardar()">Guardar</button><button class="bs lp-mini" onclick="lpSaldoEditando=false;lpRenderCarrito()">Cancelar</button></div>';
@@ -4117,7 +4123,7 @@ function lpSaldoEditar(){
 }
 function lpSaldoSet(n){
   lpSaldo=n;lpSaldoEditando=false;
-  try{localStorage.setItem('lpSaldo',String(n));}catch(e){}
+  try{LS.setItem('lpSaldo',String(n));}catch(e){}
   lpRenderCarrito();
 }
 function lpSaldoGuardar(){
@@ -4133,7 +4139,7 @@ function lpRestoHtml(total){
 }
 var lpScrap=null;
 var lpScrapUsar=true;
-try{lpScrapUsar=localStorage.getItem('lpScrapUsar')!=='no';}catch(e){}
+try{lpScrapUsar=LS.getItem('lpScrapUsar')!=='no';}catch(e){}
 function lpCargarScrap(){
   api('getResumen').then(function(r){
     if(r&&r.ok){lpScrap=parseInt(r.scrap10,10)||0;lpRenderCarrito();}
@@ -4141,10 +4147,10 @@ function lpCargarScrap(){
 }
 function lpScrapToggle(v){
   lpScrapUsar=v;
-  try{localStorage.setItem('lpScrapUsar',v?'si':'no');}catch(e){}
+  try{LS.setItem('lpScrapUsar',v?'si':'no');}catch(e){}
   lpRenderCarrito();
 }
-function lpCartGuardar(){try{localStorage.setItem('lpCarrito',JSON.stringify(lpCarrito));}catch(e){}}
+function lpCartGuardar(){try{LS.setItem('lpCarrito',JSON.stringify(lpCarrito));}catch(e){}}
 function lpPedir(id){
   var it=lpData.items.filter(function(x){return x.id===id;})[0];
   if(!it)return;
@@ -4335,10 +4341,10 @@ function ivaVista(n){
 }
 // ---- Contador de IVA (planificación) ----
 function ctCfgKey(){return 'ctCfg_'+ivaAnio+'_'+ivaMes;}
-function ctLeerCfg(){var c={};try{c=JSON.parse(localStorage.getItem(ctCfgKey())||'{}')||{};}catch(e){}return c;}
+function ctLeerCfg(){var c={};try{c=JSON.parse(LS.getItem(ctCfgKey())||'{}')||{};}catch(e){}return c;}
 function ctGuardar(){
   var c={prev:document.getElementById('ctPrev').value,obj:document.getElementById('ctObj').value};
-  try{localStorage.setItem(ctCfgKey(),JSON.stringify(c));localStorage.setItem('ctProm',document.getElementById('ctProm').value);}catch(e){}
+  try{LS.setItem(ctCfgKey(),JSON.stringify(c));LS.setItem('ctProm',document.getElementById('ctProm').value);}catch(e){}
   ctCalc();
 }
 function ctNum(id){var n=lpNum(document.getElementById(id).value);return isNaN(n)?0:n;}
@@ -4357,8 +4363,8 @@ function ctSaldoAFavorPrevio(mes,anio){
 }
 // Servicios del Resumen que van a cuenta Sergio (transferencia a Sergio o tarjeta): se facturan A
 var ctServ={},ctServUsar=true;
-try{ctServUsar=localStorage.getItem('ctServUsar')!=='no';}catch(e){}
-function ctServToggle(v){ctServUsar=v;try{localStorage.setItem('ctServUsar',v?'si':'no');}catch(e){}ctCalc();}
+try{ctServUsar=LS.getItem('ctServUsar')!=='no';}catch(e){}
+function ctServToggle(v){ctServUsar=v;try{LS.setItem('ctServUsar',v?'si':'no');}catch(e){}ctCalc();}
 function ctEsCuentaMateo(s){
   return (s.forma_pago==='Transferencia'&&String(s.cuenta_transferencia||'').trim()==='Sergio')||s.forma_pago==='Tarjeta';
 }
@@ -4383,7 +4389,7 @@ function ctRender(){
   var c=ctLeerCfg();
   document.getElementById('ctPrev').value=c.prev||'';
   document.getElementById('ctObj').value=c.obj||'';
-  var prom='';try{prom=localStorage.getItem('ctProm')||'';}catch(e){}
+  var prom='';try{prom=LS.getItem('ctProm')||'';}catch(e){}
   document.getElementById('ctProm').value=prom;
   ctCargarServ(ivaMes,ivaAnio);
   ctCalc();
@@ -4526,7 +4532,7 @@ var TJ_DEF={com:1.8,ret:0,planes:[{c:1,t:0},{c:3,t:10},{c:6,t:18},{c:12,t:35}]};
 var tjCfg=null;
 function tjIniciar(){
   if(!tjCfg){
-    try{tjCfg=JSON.parse(localStorage.getItem('tjCfg')||'null');}catch(e){}
+    try{tjCfg=JSON.parse(LS.getItem('tjCfg')||'null');}catch(e){}
     if(!tjCfg||!tjCfg.planes)tjCfg=JSON.parse(JSON.stringify(TJ_DEF));
   }
   document.getElementById('tjCom').value=String(tjCfg.com).replace('.',',');
@@ -4542,7 +4548,7 @@ function tjPct(id){var v=parseFloat(String(document.getElementById(id).value).re
 function tjGuardarCfg(){
   tjCfg.com=tjPct('tjCom');tjCfg.ret=tjPct('tjRet');
   tjCfg.planes.forEach(function(p,i){p.t=tjPct('tjPlan'+i);});
-  try{localStorage.setItem('tjCfg',JSON.stringify(tjCfg));}catch(e){}
+  try{LS.setItem('tjCfg',JSON.stringify(tjCfg));}catch(e){}
   tjCalc();
 }
 function tjCalc(){
@@ -4893,7 +4899,7 @@ function ivaCambiarMes(m,a){ivaMes=m;ivaAnio=a;ivaRender();}
 // La DDJJ de IVA de un mes se presenta el mes siguiente y se paga al contado a los 3 meses
 // (ej: período Septiembre -> se presenta en Octubre -> vence en Diciembre)
 var ivaDesfase=3,ivaCuotas=1;
-try{var _d=parseInt(localStorage.getItem('ivaDesfase3'),10);if(_d>=1&&_d<=12)ivaDesfase=_d;}catch(e){}
+try{var _d=parseInt(LS.getItem('ivaDesfase3'),10);if(_d>=1&&_d<=12)ivaDesfase=_d;}catch(e){}
 // Beneficio PyME de IVA diferido: dura 1 año. Guardamos hasta cuándo está vigente (AAAA-MM-DD)
 var ivaBenefHasta='';
 function ivaBenefDate(){if(!/^\d{4}-\d{2}-\d{2}$/.test(ivaBenefHasta))return null;var a=ivaBenefHasta.split('-');if(+a[0]<2020)return null;return new Date(+a[0],+a[1]-1,+a[2]);}
@@ -4932,8 +4938,8 @@ function ivaBenefHtml(){
   if(dias<=60)return '<div style="margin:4px 0 10px;padding:10px 12px;border:1.5px solid rgba(242,169,60,.7);background:rgba(242,169,60,.08);border-radius:var(--r-md)">'+lbl+'<div style="font-size:13.5px;color:var(--amber);font-weight:800;margin-top:4px">&#9888; El beneficio de IVA a 90 días vence en '+dias+' día'+(dias===1?'':'s')+' ('+fecha+'). Renová el certificado MiPyME en ARCA; si no, la DDJJ vuelve a pagarse el mes siguiente al período.</div></div>';
   return '<div style="margin:4px 0 10px">'+lbl+'<div style="font-size:12px;color:var(--muted);margin-top:2px">Faltan '+dias+' días. Te aviso cuando falten 60.</div></div>';
 }
-function ivaSetDesfase(v){ivaDesfase=parseInt(v,10)||3;try{localStorage.setItem('ivaDesfase3',String(ivaDesfase));}catch(e){}ivaRender();if(typeof ctCalc==='function')ctCalc();}
-function ivaSetCuotas(v){ivaCuotas=parseInt(v,10)===1?1:3;try{localStorage.setItem('ivaCuotas',String(ivaCuotas));}catch(e){}ivaRender();if(typeof ctCalc==='function')ctCalc();}
+function ivaSetDesfase(v){ivaDesfase=parseInt(v,10)||3;try{LS.setItem('ivaDesfase3',String(ivaDesfase));}catch(e){}ivaRender();if(typeof ctCalc==='function')ctCalc();}
+function ivaSetCuotas(v){ivaCuotas=parseInt(v,10)===1?1:3;try{LS.setItem('ivaCuotas',String(ivaCuotas));}catch(e){}ivaRender();if(typeof ctCalc==='function')ctCalc();}
 // "Octubre 2026" o "Octubre, Noviembre y Diciembre 2026 (3 cuotas)"
 function ivaTxtPago(mes,anio){
   var n=[];for(var k=0;k<ivaCuotas;k++){var d=new Date(anio,mes+ivaDesfasePer(mes,anio)+k,1);n.push(NOMBRES_MES[d.getMonth()]+(k===ivaCuotas-1?' '+d.getFullYear():''));}
@@ -5167,7 +5173,7 @@ function ddjjPreguntar(){
   var l=ddjjSinPagar().filter(function(x){return ddjjEstadoVence(x)==='vencida';});
   if(!l.length)return;
   var k='ddjjPreg_'+hoyStr();
-  try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1');}catch(e){}
+  try{if(LS.getItem(k))return;LS.setItem(k,'1');}catch(e){}
   var ov=document.createElement('div');ov.id='ddjjModal';
   ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(5,8,25,.75);display:flex;align-items:center;justify-content:center;padding:16px';
   var h='<div class="mc" style="max-width:520px;width:100%;margin:0"><div style="font-weight:800;font-size:18px;margin-bottom:4px">¿Se abonaron las DDJJ de IVA y las declaraciones de IIBB?</div>';
@@ -5332,11 +5338,11 @@ function pedRender(){
 // ---- Comparador entre distribuidores ----
 var cmpData=[];
 var cmpMargen=48000;
-try{var _cm=parseFloat(localStorage.getItem('cmpMargen'));if(_cm>=0)cmpMargen=_cm;}catch(e){}
+try{var _cm=parseFloat(LS.getItem('cmpMargen'));if(_cm>=0)cmpMargen=_cm;}catch(e){}
 function cmpGuardarMargen(){
   var n=lpNum(document.getElementById('cmpMargen').value);
   if(isNaN(n)||n<0){toast('Monto invalido');return;}
-  cmpMargen=n;try{localStorage.setItem('cmpMargen',String(n));}catch(e){}
+  cmpMargen=n;try{LS.setItem('cmpMargen',String(n));}catch(e){}
   document.getElementById('cmpMargen').value=formatMoney(n);
   cmpRender();toast('Se podría vender a: más barato + $'+formatMoney(n));
 }
