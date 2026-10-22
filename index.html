@@ -154,6 +154,10 @@ body.modo-tec .solo-duenos,body.modo-tec a.card[href="#precios"],body.modo-tec a
 .cg-socio span{display:block;font-size:13.5px;font-weight:700;color:var(--amber)}
 .cg-socio b{display:block;font-size:30px;font-weight:800;margin-top:4px}
 .cg-socio small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.cg-final{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px;padding:14px 18px;border-radius:var(--r-md);background:rgba(52,211,153,.10);border:1px solid rgba(52,211,153,.45)}
+.cg-final span{display:block;font-size:15px;font-weight:800;color:var(--green)}
+.cg-final small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.cg-final b{font-size:32px;font-weight:800}
 .cg-aviso{margin-top:10px;font-size:12.5px;color:var(--warn);font-weight:600}
 @media (max-width:560px){.cg-op{display:none}.cg-socios{grid-template-columns:1fr}}
 .stk-mover{margin-top:8px;width:100%;background:rgba(167,139,250,.10);border:1px dashed rgba(167,139,250,.55);color:var(--violet);border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
@@ -3634,11 +3638,13 @@ function renderStatsMes(){
   h+='</div>';
   // ---- Costos de baterías + ganancia, repartido entre Sergio y Federico ----
   var cg=cgCalcular(serviciosCache);
-  h+='<div class="mc cg-card"><div class="cg-h"><span class="cg-ic">&#128176;</span><div><div class="cg-t">Costos y ganancia · '+lpEsc(mesLabel)+'</div><div class="cg-s">Ganancia (precio de venta − costo) dividida por 2</div></div></div>';
+  h+='<div class="mc cg-card"><div class="cg-h"><span class="cg-ic">&#128176;</span><div><div class="cg-t">Costos y ganancia · '+lpEsc(mesLabel)+'</div><div class="cg-s">Costo, lo vendido, la ganancia y cómo se reparte</div></div></div>';
+  var tv=cg.costos+cg.ganancia;
   h+='<div class="cg-fila"><div class="cg-k"><span>Costo de baterías</span><b>$'+cgFmt(cg.costos)+'</b><small>'+cg.conCosto+' servicio'+(cg.conCosto===1?'':'s')+' con costo cargado</small></div>';
-  h+='<div class="cg-op">+</div><div class="cg-k"><span>Ganancia</span><b class="cg-verde">$'+cgFmt(cg.ganancia)+'</b><small>precio − costo</small></div>';
-  h+='<div class="cg-op">=</div><div class="cg-k"><span>Total vendido</span><b>$'+cgFmt(cg.costos+cg.ganancia)+'</b><small>'+cg.n+' servicio'+(cg.n===1?'':'s')+'</small></div></div>';
+  h+='<div class="cg-k"><span>Total vendido</span><b>$'+cgFmt(tv)+'</b><small>'+cg.n+' servicio'+(cg.n===1?'':'s')+'</small></div>';
+  h+='<div class="cg-k"><span>Ganancia</span><b class="cg-verde">$'+cgFmt(cg.ganancia)+'</b><small>vendido − costo</small></div></div>';
   h+='<div class="cg-socios"><div class="cg-socio"><span>Para Sergio</span><b>$'+cgFmt(cg.ganancia/2)+'</b><small>mitad de la ganancia</small></div><div class="cg-socio"><span>Para Federico</span><b>$'+cgFmt(cg.ganancia/2)+'</b><small>mitad de la ganancia</small></div></div>';
+  h+='<div class="cg-final"><div><span>Total final</span><small>mitad de la ganancia ($'+cgFmt(cg.ganancia/2)+') + mitad del costo ($'+cgFmt(cg.costos/2)+')</small></div><b>$'+cgFmt(cg.ganancia/2+cg.costos/2)+'</b></div>';
   if(cg.sinCosto)h+='<div class="cg-aviso">&#9888; '+cg.sinCosto+' batería'+(cg.sinCosto===1?'':'s')+' sin costo cargado: su precio entero cuenta como ganancia. Cargalo con el lápiz del servicio.</div>';
   h+='</div>';
   // ---- Servicios de moto del mes ----
