@@ -135,6 +135,14 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-card .acts button{font-size:16px;padding:14px 10px}
 .stk-danada{margin-top:8px;width:100%;background:transparent;border:1px dashed rgba(248,113,113,.4);color:#f87171;border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .stk-danada:disabled{opacity:.35;cursor:default}
+.stk-mover{margin-top:8px;width:100%;background:rgba(167,139,250,.10);border:1px dashed rgba(167,139,250,.55);color:var(--violet);border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+.stk-mover:disabled{opacity:.35;cursor:default}
+.mv-panel{margin-top:8px;padding:12px;border-radius:var(--r-md);background:var(--bg);border:1px solid rgba(167,139,250,.4)}
+.mv-tit{font-size:13.5px;color:var(--ink-soft);margin-bottom:8px}
+.mv-opts{display:flex;flex-direction:column;gap:6px}
+.mv-opts button{width:100%}
+.mv-opts small{opacity:.75;font-weight:600}
+.mv-pie{display:flex;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap}
 @media (min-width:900px){
   #p1,#p2{width:100vw;max-width:960px;position:relative;left:50%;transform:translateX(-50%)}
   #p3{width:100vw;max-width:min(1400px,calc(100vw - 48px));position:relative;left:50%;transform:translateX(-50%)}
@@ -2989,7 +2997,12 @@ function rMod(){
     h+='<div class="stk-num"><span class="sn">'+s+'</span><small>en stock</small></div></div>';
     h+='<div class="stk-estado '+est+'">'+bl(s)+'</div>';
     h+='<div class="acts"><button class="bp" onclick="abrirColocacion(\''+m.id+'\',\''+m.codigo+'\')"'+(s===0?' disabled':'')+'>&#8722; RESTAR UNA</button><button class="bs" onclick="tRep(\''+m.id+'\')">+ SUMAR</button></div>';
-    h+='<button class="stk-danada"'+(s===0?' disabled':'')+' onclick="restarSinRegistrar(\''+m.id+'\')">Restar sin registrar servicio (dañada / error)</button>';
+    h+='<button class="stk-mover"'+(s===0?' disabled':'')+' onclick="mvToggle(\''+m.id+'\')">&#8644; Pasar a otro stock (sin registrar servicio)</button>';
+    if(mvAbierto===String(m.id)&&s>0){
+      h+='<div class="mv-panel"><div class="mv-tit">Pasar 1 batería de <b>'+lpEsc(nombreCam(cam))+'</b> a:</div><div class="mv-opts">';
+      CAMS.forEach(function(d){if(d.c===cam.c)return;h+='<button class="bp" onclick="moverStock(\''+m.id+'\',\''+d.c+'\')">'+lpEsc(nombreCam(d))+' <small>('+(m[d.c]||0)+')</small></button>';});
+      h+='</div><div class="mv-pie"><button class="bs" onclick="mvToggle(null)">Cancelar</button><button class="stk-danada" style="margin:0;width:auto" onclick="restarSinRegistrar(\''+m.id+'\')">Dar de baja (dañada / error)</button></div></div>';
+    }
     h+='<div class="rp" id="r'+m.id+'"><div style="font-size:14px;color:var(--muted);margin-bottom:4px">¿Cuántas baterías agregás?</div>';
     h+='<div class="qr"><button class="qb" onclick="chQ(\''+m.id+'\',-1)">-</button><span class="qv" id="q'+m.id+'">1</span><button class="qb" onclick="chQ(\''+m.id+'\',1)">+</button></div>';
     h+='<div style="display:flex;gap:8px"><button class="bp" onclick="sumar(\''+m.id+'\')">Confirmar</button><button class="bs" onclick="tRep(\''+m.id+'\')">Cancelar</button></div></div></div>';
@@ -2997,7 +3010,26 @@ function rMod(){
   el.innerHTML=h+'</div>';
 }
 function restar(id){if(!datosListos())return;var m=datos.filter(function(x){return x.id===id;})[0];if(!m||m[cam.c]===0)return;m[cam.c]--;guardar(id,cam.c,m[cam.c]);rMod();toast('- '+String(m.nombre).replace(/\s*\|\s*/g,' ').trim()+' quedan '+m[cam.c]);}
-function restarSinRegistrar(id){if(!datosListos())return;
+var mvAbierto=null;
+function mvToggle(id){mvAbierto=(id&&mvAbierto!==String(id))?String(id):null;rMod();}
+function moverStock(id,destC){
+  if(!datosListos())return;
+  var m=datos.filter(function(x){return x.id===id;})[0];
+  var dest=CAMS.filter(function(x){return x.c===destC;})[0];
+  if(!m||!dest||(m[cam.c]||0)<=0)return;
+  var orig=cam;
+  m[orig.c]=(m[orig.c]||0)-1;m[dest.c]=(m[dest.c]||0)+1;
+  mvAbierto=null;rMod();sync('Guardando...');
+  api('actualizarStock',{id:id,campo:orig.c,valor:m[orig.c]}).then(function(r){
+    if(r&&r.ok===false)throw new Error(r.error||'no se guardó');
+    return api('actualizarStock',{id:id,campo:dest.c,valor:m[dest.c]});
+  }).then(function(r){
+    if(r&&r.ok===false)throw new Error(r.error||'no se guardó');
+    sync('Sincronizado');
+    toast('Pasada 1 '+stkPartes(m).cod+' de '+nombreCam(orig)+' a '+nombreCam(dest));
+  }).catch(function(e){sync('Sincronizado');toast('Error al mover: '+e.message+'. Revisá el stock.');});
+}
+function restarSinRegistrar(id){mvAbierto=null;if(!datosListos())return;
   var m=datos.filter(function(x){return x.id===id;})[0];
   if(!m||m[cam.c]===0)return;
   if(!confirm('Restar 1 unidad de '+m.nombre+' sin registrar un servicio?'))return;
