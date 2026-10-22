@@ -135,6 +135,24 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-card .acts button{font-size:16px;padding:14px 10px}
 .stk-danada{margin-top:8px;width:100%;background:transparent;border:1px dashed rgba(248,113,113,.4);color:#f87171;border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .stk-danada:disabled{opacity:.35;cursor:default}
+.cg-card{padding:1.2rem 1.3rem}
+.cg-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cg-ic{font-size:26px}
+.cg-t{font-size:18px;font-weight:800}
+.cg-s{font-size:13px;color:var(--muted);margin-top:2px}
+.cg-fila{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.cg-k{flex:1;min-width:150px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px}
+.cg-k span{display:block;font-size:12.5px;color:var(--muted);font-weight:700}
+.cg-k b{display:block;font-size:24px;font-weight:800;margin-top:4px}
+.cg-k small{display:block;font-size:12px;color:var(--muted2);margin-top:2px}
+.cg-verde{color:var(--green)}
+.cg-op{display:flex;align-items:center;font-size:22px;font-weight:800;color:var(--muted)}
+.cg-socios{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.cg-socio{border-radius:var(--r-md);padding:14px 16px;background:rgba(242,169,60,.10);border:1px solid rgba(242,169,60,.45);text-align:center}
+.cg-socio span{display:block;font-size:13.5px;font-weight:700;color:var(--amber)}
+.cg-socio b{display:block;font-size:30px;font-weight:800;margin-top:4px}
+.cg-aviso{margin-top:10px;font-size:12.5px;color:var(--warn);font-weight:600}
+@media (max-width:560px){.cg-op{display:none}.cg-socios{grid-template-columns:1fr}}
 .stk-mover{margin-top:8px;width:100%;background:rgba(167,139,250,.10);border:1px dashed rgba(167,139,250,.55);color:var(--violet);border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
 .stk-mover:disabled{opacity:.35;cursor:default}
 .mv-panel{margin-top:8px;padding:12px;border-radius:var(--r-md);background:var(--bg);border:1px solid rgba(167,139,250,.4)}
@@ -1071,6 +1089,7 @@ if(!LS.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="colVigencia" value="12 meses"/></div>
 <div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="colTelefonoCliente" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
+<div class="gfield"><label>Costo de la batería <span style="font-weight:500;color:var(--muted)">(lo que pagaron por ella)</span></label><input type="text" id="colCosto" inputmode="numeric" placeholder="Ej: $95.000"/></div>
 <div class="gfield wide"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="colPagoBtns">
 <button type="button" class="bs" onclick="setColPago('Efectivo',this)" style="flex:1">Efectivo</button>
@@ -1205,6 +1224,7 @@ if(!LS.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="editVigencia"/></div>
 <div class="gfield"><label>Telefono cliente (opcional)</label><input type="text" id="editTelefonoCliente"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="editPrecio"/></div>
+<div class="gfield"><label>Costo de la batería</label><input type="text" id="editCosto" inputmode="numeric"/></div>
 <div class="gfield"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="editPagoBtns">
 <button type="button" class="bs" onclick="setEditPago('Efectivo',this)" style="flex:1">Efectivo</button>
@@ -3059,6 +3079,7 @@ function abrirColocacion(id,codigo){
   document.getElementById('colVigencia').value='12 meses';
   document.getElementById('colTelefonoCliente').value='';
   document.getElementById('colPrecio').value='';
+  document.getElementById('colCosto').value='';
   document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
@@ -3124,6 +3145,7 @@ function confirmarColocacion(){if(!datosListos())return;
     combustible:combustible,
     modelo_bateria:modeloParaGarantia,
     precio:precio,
+    costo:document.getElementById('colCosto').value.trim(),
     forma_pago:colPago,
     cuenta_transferencia:colCuenta,
     ubicacion:colUbi,
@@ -3536,6 +3558,18 @@ function calcularStatsMes(lista){
   var totalClientesNuevos=Object.keys(clientesNuevosSet).length;
   return {motoLista:motoLista,totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,totalVis:totalVis,totalClientesRepetidos:totalClientesRepetidos,totalClientesNuevos:totalClientesNuevos,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto,porCuentaTransferencia:porCuentaTransferencia,porCuentaTransferenciaMonto:porCuentaTransferenciaMonto};
 }
+function cgNum(v){if(typeof v==='number')return v;var t=String(v||'').replace(/[^\d,]/g,'').replace(',','.');return parseFloat(t)||0;}
+function cgFmt(n){return Math.round(n).toLocaleString('es-AR');}
+function cgCalcular(lista){
+  var r={costos:0,ganancia:0,n:0,conCosto:0,sinCosto:0};
+  (lista||[]).forEach(function(s){
+    var precio=cgNum(s.precio),costo=cgNum(s.costo);
+    var modelo=s.modelo_bateria||'',esExtra=(modelo==='Arranque'||modelo==='Carga de bateria'||modelo==='Visita tecnica');
+    r.n++;r.costos+=costo;r.ganancia+=precio-costo;
+    if(costo>0)r.conCosto++;else if(!esExtra)r.sinCosto++;
+  });
+  return r;
+}
 function renderStatsMes(){
   var mesLabel=NOMBRES_MES[mesSeleccionado]+(anioSeleccionado!==(new Date()).getFullYear()?' '+anioSeleccionado:'');
   var st=calcularStatsMes(serviciosCache);
@@ -3593,6 +3627,15 @@ function renderStatsMes(){
   if(gastoMes>0)chips.push('Google Ads del mes: $'+formatMoney(gastoMes)+(totalGeneral?' &middot; costo por servicio $'+formatMoney(gastoMes/totalGeneral):''));
   if(st.totalClientesRepetidos||st.totalClientesNuevos)chips.push('&#128101; '+st.totalClientesRepetidos+' cliente'+(st.totalClientesRepetidos===1?'':'s')+' repetido'+(st.totalClientesRepetidos===1?'':'s')+' &middot; '+st.totalClientesNuevos+' nuevo'+(st.totalClientesNuevos===1?'':'s'));
   if(chips.length)h+='<div class="pr-chips">'+chips.map(function(c){return '<span>'+c+'</span>';}).join('')+'</div>';
+  h+='</div>';
+  // ---- Costos de baterías + ganancia, repartido entre Sergio y Federico ----
+  var cg=cgCalcular(serviciosCache);
+  h+='<div class="mc cg-card"><div class="cg-h"><span class="cg-ic">&#128176;</span><div><div class="cg-t">Costos y ganancia · '+lpEsc(mesLabel)+'</div><div class="cg-s">Costo de las baterías + ganancia, dividido por 2</div></div></div>';
+  h+='<div class="cg-fila"><div class="cg-k"><span>Costo de baterías</span><b>$'+cgFmt(cg.costos)+'</b><small>'+cg.conCosto+' servicio'+(cg.conCosto===1?'':'s')+' con costo cargado</small></div>';
+  h+='<div class="cg-op">+</div><div class="cg-k"><span>Ganancia</span><b class="cg-verde">$'+cgFmt(cg.ganancia)+'</b><small>precio − costo</small></div>';
+  h+='<div class="cg-op">=</div><div class="cg-k"><span>Total</span><b>$'+cgFmt(cg.costos+cg.ganancia)+'</b><small>'+cg.n+' servicio'+(cg.n===1?'':'s')+'</small></div></div>';
+  h+='<div class="cg-socios"><div class="cg-socio"><span>Para Sergio</span><b>$'+cgFmt((cg.costos+cg.ganancia)/2)+'</b></div><div class="cg-socio"><span>Para Federico</span><b>$'+cgFmt((cg.costos+cg.ganancia)/2)+'</b></div></div>';
+  if(cg.sinCosto)h+='<div class="cg-aviso">&#9888; '+cg.sinCosto+' batería'+(cg.sinCosto===1?'':'s')+' sin costo cargado: su precio entero cuenta como ganancia. Cargalo con el lápiz del servicio.</div>';
   h+='</div>';
   // ---- Servicios de moto del mes ----
   var ml=st.motoLista.slice().sort(function(a,b){return String(a.fecha)<String(b.fecha)?1:-1;});
@@ -3952,6 +3995,7 @@ function editarServicioClick(fila){
   document.getElementById('editVigencia').value=s.vigencia||'';
   document.getElementById('editTelefonoCliente').value=s.telefono_cliente||'';
   document.getElementById('editPrecio').value=s.precio||'';
+  document.getElementById('editCosto').value=s.costo||'';
   document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){
     b.style.background=b.textContent===editPago?'#f2a93c':'transparent';
     b.style.color=b.textContent===editPago?'#1b2330':'#c7cde0';
@@ -4016,6 +4060,7 @@ function confirmarEditServicio(){
     vigencia:document.getElementById('editVigencia').value.trim(),
     telefono_cliente:document.getElementById('editTelefonoCliente').value.trim(),
     precio:document.getElementById('editPrecio').value.trim(),
+    costo:document.getElementById('editCosto').value.trim(),
     forma_pago:editPago,
     cuenta_transferencia:editCuenta,
     ubicacion:editUbi,
